@@ -1,6 +1,8 @@
 import sys
+import datetime
 from PyQt5 import QtGui, QtCore, QtWidgets
 from ocsharetools import *
+
 
 class OCShareTool(QtWidgets.QWidget):
 
@@ -78,7 +80,6 @@ class OCShareTool(QtWidgets.QWidget):
         vbox.addWidget(self.expirationCB)
 
         self.calendar = QtWidgets.QCalendarWidget(self)
-        self.calendar.setSelectedDate(QtCore.QDate())
         self.calendar.clicked[QtCore.QDate].connect(self.date_selected)
         vbox.addWidget(self.calendar)
 
@@ -98,7 +99,15 @@ class OCShareTool(QtWidgets.QWidget):
                     self.passwordEdit.show()
                     self.passwordCB.setChecked(True)
                 if share.expiration is not None:
-                    pass
+                    self.expirationCB.setChecked(True)
+                    self.calendar.show()
+                    date = datetime.datetime.strptime(
+                        share.expiration,
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    self.calendar.setSelectedDate(
+                        QtCore.QDate(date.year, date.month, date.day)
+                    )
             else:
                 if share.share_type == 1:
                     title = '%s (group)' % (share.share_with)
@@ -113,14 +122,14 @@ class OCShareTool(QtWidgets.QWidget):
                     )
                 )
                 canShare = QtWidgets.QCheckBox('can share', self)
-                self.setupShareTickbox(
+                self.setup_share_tickbox(
                     canShare,
                     share,
                     PERMISSION_SHARE
                 )
                 hbox.addWidget(canShare)
                 canShare = QtWidgets.QCheckBox('can edit', self)
-                self.setupShareTickbox(
+                self.setup_share_tickbox(
                     canShare,
                     share,
                     PERMISSION_UPDATE
@@ -152,7 +161,7 @@ class OCShareTool(QtWidgets.QWidget):
         self.show()
 
     def date_selected(self, date):
-        print(date.toPyDate().ctime())
+        self.public_share.update(expireDate=date.toPyDate())
 
     def create_delete_button(self, hbox, share):
         return lambda checked: self.delete_clicked(
@@ -172,7 +181,7 @@ class OCShareTool(QtWidgets.QWidget):
             item.widget().close()
             layout.removeItem(item)
 
-    def setupShareTickbox(self, checkbox, share, permission):
+    def setup_share_tickbox(self, checkbox, share, permission):
         if share.permissions & permission:
             checkbox.setChecked(True)
         checkbox.stateChanged.connect(
@@ -229,7 +238,14 @@ class OCShareTool(QtWidgets.QWidget):
     def expiration_check_changed(self, state):
         if state == QtCore.Qt.Checked:
             self.calendar.show()
+            date = datetime.date.today() + datetime.timedelta(days=1)
+            self.public_share.update(
+                expireDate=date
+            )
+            date = QtCore.QDate(date.year, date.month, date.day)
+            self.calendar.setSelectedDate(date)
         else:
+            self.public_share.update(expireDate=False)
             self.calendar.hide()
 
     def share_link(self, state):
@@ -241,7 +257,7 @@ class OCShareTool(QtWidgets.QWidget):
             self.shareEdit.setText(self.share.url)
             self.show_share()
         else:
-            self.ocs.delete_share(share=self.public_share)
+            self.public_share.delete()
             self.hide_share()
 
     def keyPressEvent(self, e):
@@ -251,8 +267,8 @@ class OCShareTool(QtWidgets.QWidget):
     def focus_changed(self, old, now):
         if (now is None and
                 QtWidgets.QApplication.activeWindow() is None):
-            return
             self.close()
+
 
 def run(args):
     app = QtWidgets.QApplication(sys.argv)

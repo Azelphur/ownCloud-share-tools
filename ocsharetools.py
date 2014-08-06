@@ -31,6 +31,7 @@ if _platform == "linux" or _platform == "linux2":
 elif _platform == "darwin":
     CONFIG_PATH = os.path.expanduser('~/Library/Application Support/ownCloud')
 
+
 def check_status(jsonfeed):
     if jsonfeed['ocs']['meta']['statuscode'] != 100:
         raise OCShareException(jsonfeed['ocs']['meta'])
@@ -92,7 +93,7 @@ class OCShareAPI:
         return shares
 
     def get_share(self, share):
-        return self.getShareById(share.id)
+        return self.get_share_by_id(share.id)
 
     def get_share_by_id(self, share_id):
         request = requests.get(
@@ -140,16 +141,21 @@ class OCShareAPI:
         check_status(jsonfeed)
 
     def update_share(self, share, permissions=None,
-                     password=None, publicUpload=None):
-        return self.updateShareById(
+                     password=None, publicUpload=None, expireDate=None):
+        return self.update_share_by_id(
             share.id,
             permissions,
             password,
-            publicUpload
+            publicUpload,
+            expireDate=expireDate
         )
 
     def update_share_by_id(self, share_id, permissions=None,
-                           password=None, publicUpload=None):
+                           password=None, publicUpload=None, expireDate=None):
+        if expireDate:
+            expireDate = expireDate.strftime('%d-%m-%Y')
+        elif expireDate is False:
+            expireDate = ''
         request = requests.put(
             '%s%s/shares/%d' % (self.url, API_PATH, share_id),
             auth=(self.username, self.password),
@@ -157,7 +163,8 @@ class OCShareAPI:
             data={
                 'permissions': permissions,
                 'password': password,
-                'publicUpload': publicUpload
+                'publicUpload': publicUpload,
+                'expireDate': expireDate
             }
         )
         check_request(request)
@@ -179,14 +186,15 @@ class OCShare:
         self.ocshareapi.delete_share_by_id(self.id)
 
     def update(self, permissions=None,
-               password=None, publicUpload=None):
+               password=None, publicUpload=None, expireDate=None):
         self.permissions = permissions
         self.publicUpload = publicUpload
         return self.ocshareapi.update_share_by_id(
             self.id,
             permissions,
             password,
-            publicUpload
+            publicUpload,
+            expireDate
         )
 
     def __str__(self):
