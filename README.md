@@ -6,7 +6,7 @@
 * Editing an existing user/group share
 * Deleting an existing user/group share
 * Setting an expiration date
-* 
+
 ##### Stuff that doesn't work yet:
 * Adding a new user/group share
 * ~~Setting an expiration date~~
