@@ -25,10 +25,13 @@ SHARE_PATH = '/public.php?service=files&t='
 from sys import platform as _platform
 if _platform == 'linux' or _platform == 'linux2':
     CONFIG_PATH = os.path.expanduser('~/.local/share/data/ownCloud')
+    FOLDER_CHAR = '/'
 elif _platform == 'darwin':
     CONFIG_PATH = os.path.expanduser('~/Library/Application Support/ownCloud')
+    FOLDER_CHAR = '/'
 elif _platform == 'win32':
     CONFIG_PATH = os.environ['APPDATA']+'\ownCloud\owncloud.cfg'
+    FOLDER_CHAR = '\\'
 
 
 def check_status(jsonfeed):
@@ -53,6 +56,20 @@ def full_path_to_cloud(fullPath):
     for path in paths:
         if fullPath[:len(path)] == path:
             return fullPath[len(path)-1:]
+    return None
+
+def get_instant_upload_path():
+    for f in os.listdir(CONFIG_PATH+'/folders'):
+        config = ConfigParser.ConfigParser()
+        config.read('%s/%s' % (CONFIG_PATH+'/folders', f))
+        if config['ownCloud']['targetPath'] == '/':
+            return (
+                config['ownCloud']['localPath'] +
+                FOLDER_CHAR +
+                'InstantUpload' +
+                FOLDER_CHAR
+            )
+
     return None
 
 

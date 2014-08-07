@@ -218,6 +218,12 @@ def run():
         required=True,
         help='path to the file/folder which should be shared'
     )
+    parser_delete.add_argument(
+        '--instant-upload-path',
+        type=str,
+        required=False,
+        help='path to do instant uploads to, if required'
+    )
 
     args = parser.parse_args()
     ocs = OCShareAPI(args.url, args.username, args.password)

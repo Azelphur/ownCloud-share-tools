@@ -1,6 +1,7 @@
 import sys
 import datetime
 from PyQt5 import QtGui, QtCore, QtWidgets
+import shutil
 from ocsharetools import *
 
 
@@ -9,10 +10,47 @@ class OCShareTool(QtWidgets.QWidget):
     def __init__(self, args):
         super(OCShareTool, self).__init__()
         self.args = args
+        if not os.path.exists(args.path):
+            QtWidgets.QMessageBox.critical(
+                self,
+                'OC Share Tools',
+                'File does not exist',
+                QtWidgets.QMessageBox.Ok
+            )
+            sys.exit(0)
+
         self.ocs = OCShareAPI(args.url, args.username, args.password)
-        self.cloudPath = full_path_to_cloud(args.path)
         self.public_share = None
         self.dialog_open = False
+        self.cloudPath = full_path_to_cloud(args.path)
+        if self.cloudPath is None:
+            if args.instant_upload_path:
+                path = args.instant_upload_path
+            else:
+                path = get_instant_upload_path()
+            if not path or not os.path.exists(path):
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    'OC Share Tools',
+                    'This file is not in an ownCloud share',
+                    QtWidgets.QMessageBox.Ok
+                )
+                sys.exit(0)
+            reply = QtWidgets.QMessageBox.question(
+                self, 'ownCloud',
+                'File is not in an ownCloud share directory. '
+                'Move to instant uploads?',
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No
+            )
+
+            if reply == QtWidgets.QMessageBox.Yes:
+                self.cloudPath = full_path_to_cloud(
+                    path+os.path.basename(args.path)
+                )
+                shutil.move(args.path, path)
+            else:
+                sys.exit(0)
         self.initUI()
 
     def initUI(self):
