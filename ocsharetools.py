@@ -2,11 +2,7 @@
 
 import requests
 import os
-
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
+import configparser as ConfigParser
 
 DEBUG = False
 if DEBUG:
@@ -25,11 +21,14 @@ PERMISSION_SHARE = 16
 
 API_PATH = '/ocs/v1.php/apps/files_sharing/api/v1'
 SHARE_PATH = '/public.php?service=files&t='
+
 from sys import platform as _platform
-if _platform == "linux" or _platform == "linux2":
+if _platform == 'linux' or _platform == 'linux2':
     CONFIG_PATH = os.path.expanduser('~/.local/share/data/ownCloud')
-elif _platform == "darwin":
+elif _platform == 'darwin':
     CONFIG_PATH = os.path.expanduser('~/Library/Application Support/ownCloud')
+elif _platform == 'win32':
+    CONFIG_PATH = os.environ['APPDATA']+'\ownCloud\owncloud.cfg'
 
 
 def check_status(jsonfeed):

@@ -12,6 +12,7 @@ class OCShareTool(QtWidgets.QWidget):
         self.ocs = OCShareAPI(args.url, args.username, args.password)
         self.cloudPath = full_path_to_cloud(args.path)
         self.public_share = None
+        self.dialog_open = False
         self.initUI()
 
     def initUI(self):
@@ -126,7 +127,6 @@ class OCShareTool(QtWidgets.QWidget):
                 self.shareCB.setChecked(True)
                 self.shareEdit.setText(share.url)
                 self.show_share()
-                print('Setting public share to', share.id)
                 self.public_share = share
                 if share.share_with is not None:
                     if self.passwordEdit.text() == '':
@@ -189,13 +189,23 @@ class OCShareTool(QtWidgets.QWidget):
         self.shareListVBox.addLayout(hbox)
 
     def add_share(self, share_type, line_edit):
-        share = self.ocs.create_share(
-            path=self.cloudPath,
-            shareType=share_type,
-            shareWith=line_edit.text()
-        )
-        self.shares[share.id] = share
-        self.add_share_widgets(share)
+        try:
+            share = self.ocs.create_share(
+                path=self.cloudPath,
+                shareType=share_type,
+                shareWith=line_edit.text()
+            )
+            self.shares[share.id] = share
+            self.add_share_widgets(share)
+        except OCShareException as e:
+            self.dialog_open = True
+            QtWidgets.QMessageBox.critical(
+                self,
+                'ownCloud Error %d' % (e.status_code),
+                e.message,
+                QtWidgets.QMessageBox.Ok
+            )
+            self.dialog_open = False
         line_edit.setText('')
 
     def date_selected(self, date):
@@ -306,7 +316,8 @@ class OCShareTool(QtWidgets.QWidget):
 
     def focus_changed(self, old, now):
         if (now is None and
-                QtWidgets.QApplication.activeWindow() is None):
+                QtWidgets.QApplication.activeWindow() is None and
+                self.dialog_open is False):
             self.close()
 
 
