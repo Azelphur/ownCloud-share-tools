@@ -12,7 +12,7 @@
 * ~~Adding a new user/group share~~
 * ~~Setting an expiration date~~
 * Handling of files that aren't inside the ownCloud share directory
-* Support for non-Linux operating systems
+* ~~Support for non-Linux operating systems~~
 
 ## ownCloud-share-tools
 
