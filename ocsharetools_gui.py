@@ -360,7 +360,6 @@ class OCShareTool(QtWidgets.QWidget):
         if (now is None and
                 QtWidgets.QApplication.activeWindow() is None and
                 self.dialog_open is False):
-            return
             self.close()
 
 
