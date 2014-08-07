@@ -6,9 +6,10 @@
 * Editing an existing user/group share
 * Deleting an existing user/group share
 * Setting an expiration date
+* Adding a new user/group share
 
 ##### Stuff that doesn't work yet:
-* Adding a new user/group share
+* ~~Adding a new user/group share~~
 * ~~Setting an expiration date~~
 * Handling of files that aren't inside the ownCloud share directory
 * Support for non-Linux operating systems
