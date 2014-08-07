@@ -1,32 +1,92 @@
-## This isn't finished yet
-##### Stuff that works:
-* Creating a public link
-* Deleting a public link
-* Password protection
-* Editing an existing user/group share
-* Deleting an existing user/group share
-* Setting an expiration date
-* Adding a new user/group share
-
-##### Stuff that doesn't work yet:
-* ~~Adding a new user/group share~~
-* ~~Setting an expiration date~~
-* Handling of files that aren't inside the ownCloud share directory
-* ~~Support for non-Linux operating systems~~
-
 ## ownCloud-share-tools
 
 ownCloud share tools is an set of tools that provide access to the ownCloud OCS Share API. In this repository you will find the command line client, GUI and Python library for interfacing with ownCloud shares.
 
-## Using the GUI
+***
 
-The GUI is designed to be used as a file browser action. Most file browsers allow you to add custom actions, for example to add the GUI to Thunar go to edit, configure custom actions, click add then in the command box enter
+## The GUI
+
+![](http://i.imgur.com/VQ5vG24.png)
+ownCloud-share-tools running on Linux as a Thunar custom action.
+
+The GUI is designed to be used as a file browser action.
+To add the GUI to Thunar, open Thunar and click edit, configure custom actions, click add then in the command box enter
 
 `python3 ocssharetools.py gui --user YourUserName --pass YourPassword --url http://example.com/owncloud gui --path %F`
 
-All the other text boxes can be set to whatever you want.
+All the other text boxes can be set to whatever you want, although setting the name to ownCloud and using the ownCloud icon is recommended.
 
-You will then be able to right click on a file in thunar, and select your custom action, which will invoke the GUI
+***
 
 ## Using the CLI
-Using the CLI is very simple, just run python3 ocssharetools.py --help for more details. It is fully documented.
+```
+$ ./ocsharetools.py --help
+usage: ocsharetools.py [-h] --username USERNAME --password PASSWORD --url URL
+                       {getshares,getshare,create,update,delete,gui} ...
+
+Perform OCS Share API calls
+
+positional arguments:
+  {getshares,getshare,create,update,delete,gui}
+                        Available commands
+    getshares           get Shares from a specific file or folder
+    getshare            get a single share by id
+    create              create a share
+    update              update a share
+    delete              delete a share by id
+    gui                 run gui
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --username USERNAME   Your OwnCloud username
+  --password PASSWORD   Your OwnCloud password
+  --url URL             Your OwnCloud url, eg https://example.com/owncloud/
+  ```
+
+######Examples:
+Get a list of shares
+
+```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud getshares```
+
+Create a public share link with a password
+
+```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=3 --share=password secret```
+
+Create a share with a user
+
+```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=0 --share-with=Steve```
+
+Create a share with a group
+
+```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=1 --share-with=Developers```
+
+Delete a share (ID number is obtained from getshares command)
+
+```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud delete 32```
+
+Update a share a share (ID number is obtained from getshares command), setting an expiry date
+
+```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud update 32 --expire-date "31-01-2015"```
+
+## Using the library
+
+```python
+# First off, import the library
+from ocsharetools import *
+
+# Initialise the library with your url, username and password
+ocs = OCShareAPI('http://example.com/ownCloud', 'Bob', 'secret')
+
+# Create a share
+share = ocs.create_share(path='/NewDocument.odt', share_type=3)
+
+# Print share URL
+print(share.url)
+
+# Set the expiry date to tomorrow.
+import datetime
+date = datetime.date.today() + datetime.timedelta(days=1)
+share.update(expireDate=date)
+
+# Delete the share
+share.delete()
