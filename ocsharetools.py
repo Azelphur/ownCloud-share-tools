@@ -156,6 +156,9 @@ class OCShareAPI:
             expireDate = expireDate.strftime('%d-%m-%Y')
         elif expireDate is False:
             expireDate = ''
+
+        if password is False:
+            password = ''
         request = requests.put(
             '%s%s/shares/%d' % (self.url, API_PATH, share_id),
             auth=(self.username, self.password),

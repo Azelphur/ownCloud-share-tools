@@ -12,12 +12,7 @@ class OCShareTool(QtWidgets.QWidget):
         self.ocs = OCShareAPI(args.url, args.username, args.password)
         self.cloudPath = full_path_to_cloud(args.path)
         self.public_share = None
-        if self.cloudPath:
-            try:
-                self.shares = self.ocs.get_shares(path=self.cloudPath)
-            except OCShareException:
-                self.shares = []
-            self.initUI()
+        self.initUI()
 
     def initUI(self):
         self.setWindowFlags(
@@ -30,13 +25,15 @@ class OCShareTool(QtWidgets.QWidget):
         vbox.addStretch(1)
         vbox.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
 
-        groupEdit = QtWidgets.QLineEdit()
-        groupEdit.setFixedWidth(300)
-        groupEdit.setPlaceholderText('Share with user or group...')
-        vbox.addWidget(groupEdit)
+        self.groupEdit = QtWidgets.QLineEdit()
+        self.groupEdit.setPlaceholderText('Share with group...')
+        vbox.addWidget(self.groupEdit)
+
+        self.userEdit = QtWidgets.QLineEdit()
+        self.userEdit.setPlaceholderText('Share with user...')
+        vbox.addWidget(self.userEdit)
 
         self.shareListVBox = QtWidgets.QVBoxLayout()
-        self.shareListHBoxes = []
         vbox.addLayout(self.shareListVBox)
 
         horizontalLine = QtWidgets.QFrame()
@@ -56,7 +53,10 @@ class OCShareTool(QtWidgets.QWidget):
             '',
             self
         )
-        self.copyButton.resize(self.copyButton.sizeHint())
+        self.copyButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed,
+            QtWidgets.QSizePolicy.Fixed
+        )
 
         self.shareEdit = QtWidgets.QLineEdit()
         self.shareHBox.addWidget(self.shareEdit)
@@ -80,7 +80,6 @@ class OCShareTool(QtWidgets.QWidget):
         vbox.addWidget(self.expirationCB)
 
         self.calendar = QtWidgets.QCalendarWidget(self)
-        self.calendar.clicked[QtCore.QDate].connect(self.date_selected)
         vbox.addWidget(self.calendar)
 
         self.setLayout(vbox)
@@ -88,14 +87,50 @@ class OCShareTool(QtWidgets.QWidget):
         self.setWindowTitle('OwnCloud Share')
 
         self.hide_share()
-        for share in self.shares:
+        self.get_shares()
+
+        self.calendar.clicked[QtCore.QDate].connect(self.date_selected)
+        self.groupEdit.returnPressed.connect(
+            lambda: self.add_share(SHARETYPE_GROUP, self.groupEdit)
+        )
+        self.userEdit.returnPressed.connect(
+            lambda: self.add_share(SHARETYPE_USER, self.userEdit)
+        )
+        self.passwordEdit.returnPressed.connect(self.set_password)
+        self.passwordCB.stateChanged.connect(
+            self.password_check_changed
+        )
+        self.shareCB.stateChanged.connect(self.share_link)
+        self.copyButton.clicked.connect(self.copy_button_clicked)
+        self.expirationCB.stateChanged.connect(
+            self.expiration_check_changed
+        )
+
+        self.show()
+
+    def get_shares(self):
+        self.shares = {}
+        if self.cloudPath:
+            try:
+                shares = self.ocs.get_shares(path=self.cloudPath)
+                for share in shares:
+                    self.shares[share.id] = share
+            except OCShareException:
+                pass
+        for i in reversed(range(self.shareListVBox.count())):
+            item = self.shareListVBox.itemAt(i)
+            item.widget().close()
+            self.shareListVBox.removeItem(item)
+        for share_id, share in self.shares.items():
             if share.share_type == 3:
                 self.shareCB.setChecked(True)
                 self.shareEdit.setText(share.url)
                 self.show_share()
+                print('Setting public share to', share.id)
                 self.public_share = share
                 if share.share_with is not None:
-                    self.passwordEdit.setText('********')
+                    if self.passwordEdit.text() == '':
+                        self.passwordEdit.setText('********')
                     self.passwordEdit.show()
                     self.passwordCB.setChecked(True)
                 if share.expiration is not None:
@@ -109,56 +144,59 @@ class OCShareTool(QtWidgets.QWidget):
                         QtCore.QDate(date.year, date.month, date.day)
                     )
             else:
-                if share.share_type == 1:
-                    title = '%s (group)' % (share.share_with)
-                else:
-                    title = share.share_with
-                hbox = QtWidgets.QHBoxLayout()
-                self.shareListHBoxes += [hbox]
-                hbox.addWidget(
-                    QtWidgets.QLabel(
-                        title,
-                        self
-                    )
-                )
-                canShare = QtWidgets.QCheckBox('can share', self)
-                self.setup_share_tickbox(
-                    canShare,
-                    share,
-                    PERMISSION_SHARE
-                )
-                hbox.addWidget(canShare)
-                canShare = QtWidgets.QCheckBox('can edit', self)
-                self.setup_share_tickbox(
-                    canShare,
-                    share,
-                    PERMISSION_UPDATE
-                )
-                hbox.addWidget(canShare)
-                deleteButton = QtWidgets.QPushButton(
-                    QtGui.QIcon.fromTheme('edit-delete'),
-                    '',
-                    self
-                )
-                deleteButton.clicked.connect(
-                    self.create_delete_button(hbox, share)
-                )
+                self.add_share_widgets(share)
 
-                hbox.addWidget(deleteButton)
-                self.shareListVBox.addLayout(hbox)
-
-        self.passwordEdit.textChanged.connect(self.password_changed)
-        self.passwordEdit.returnPressed.connect(self.set_password)
-        self.passwordCB.stateChanged.connect(
-            self.password_check_changed
+    def add_share_widgets(self, share):
+        if share.share_type == 1:
+            title = '%s (group)' % (share.share_with)
+        else:
+            title = share.share_with
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(
+            QtWidgets.QLabel(
+                title,
+                self
+            )
         )
-        self.shareCB.stateChanged.connect(self.share_link)
-        self.copyButton.clicked.connect(self.copy_button_clicked)
-        self.expirationCB.stateChanged.connect(
-            self.expiration_check_changed
+        canShare = QtWidgets.QCheckBox('can share', self)
+        self.setup_share_tickbox(
+            canShare,
+            share,
+            PERMISSION_SHARE
+        )
+        hbox.addWidget(canShare)
+        canShare = QtWidgets.QCheckBox('can edit', self)
+        self.setup_share_tickbox(
+            canShare,
+            share,
+            PERMISSION_UPDATE
+        )
+        hbox.addWidget(canShare)
+        deleteButton = QtWidgets.QPushButton(
+            QtGui.QIcon.fromTheme('edit-delete'),
+            '',
+            self
+        )
+        deleteButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed,
+            QtWidgets.QSizePolicy.Fixed
+        )
+        deleteButton.clicked.connect(
+            self.create_delete_button(hbox, share)
         )
 
-        self.show()
+        hbox.addWidget(deleteButton)
+        self.shareListVBox.addLayout(hbox)
+
+    def add_share(self, share_type, line_edit):
+        share = self.ocs.create_share(
+            path=self.cloudPath,
+            shareType=share_type,
+            shareWith=line_edit.text()
+        )
+        self.shares[share.id] = share
+        self.add_share_widgets(share)
+        line_edit.setText('')
 
     def date_selected(self, date):
         self.public_share.update(expireDate=date.toPyDate())
@@ -171,10 +209,7 @@ class OCShareTool(QtWidgets.QWidget):
         )
 
     def delete_clicked(self, event, share, layout):
-        for i in range(0, len(self.shares)):
-            if self.shares[i] == share:
-                del self.shares[i]
-                break
+        del self.shares[share.id]
         share.delete()
         for i in reversed(range(layout.count())):
             item = layout.itemAt(i)
@@ -214,16 +249,11 @@ class OCShareTool(QtWidgets.QWidget):
         else:
             share.update(permissions=share.permissions & ~permission)
 
-    def password_changed(self):
-        self.passwordEdit.setPlaceholderText(
-            'Choose a password for the public link'
-        )
-
     def set_password(self):
         self.public_share.update(password=self.passwordEdit.text())
-        self.shares = self.ocs.get_shares(path=self.cloudPath)
-        self.passwordEdit.setText('')
         self.passwordEdit.setPlaceholderText('Password Set')
+        self.get_shares()
+        self.passwordEdit.setText('')
 
     def copy_button_clicked(self, event):
         clipboard = QtWidgets.QApplication.clipboard()
@@ -233,6 +263,12 @@ class OCShareTool(QtWidgets.QWidget):
         if state == QtCore.Qt.Checked:
             self.passwordEdit.show()
         else:
+            self.public_share.update(password=False)
+            self.get_shares()
+            self.passwordEdit.setText('')
+            self.passwordEdit.setPlaceholderText(
+                'Choose a password for the public link'
+            )
             self.passwordEdit.hide()
 
     def expiration_check_changed(self, state):
@@ -244,20 +280,24 @@ class OCShareTool(QtWidgets.QWidget):
             )
             date = QtCore.QDate(date.year, date.month, date.day)
             self.calendar.setSelectedDate(date)
-        else:
+        elif self.public_share:
             self.public_share.update(expireDate=False)
             self.calendar.hide()
 
     def share_link(self, state):
         if state == QtCore.Qt.Checked:
-            self.share = self.ocs.create_share(
+            share = self.ocs.create_share(
                 path=self.cloudPath,
                 shareType=SHARETYPE_PUBLIC
             )
-            self.shareEdit.setText(self.share.url)
+            self.shares[share.id] = share
+            self.public_share = share
+            self.shareEdit.setText(self.public_share.url)
             self.show_share()
         else:
+            del self.shares[self.public_share.id]
             self.public_share.delete()
+            self.public_share = None
             self.hide_share()
 
     def keyPressEvent(self, e):
