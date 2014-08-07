@@ -58,6 +58,7 @@ def full_path_to_cloud(fullPath):
             return fullPath[len(path)-1:]
     return None
 
+
 def get_instant_upload_path():
     for f in os.listdir(CONFIG_PATH+'/folders'):
         config = ConfigParser.ConfigParser()
@@ -90,6 +91,15 @@ class OCShareAPI:
         self.url = url
 
     def get_shares(self, path=None, reshares=None, subfiles=None):
+        """Get a list of shares
+
+        Keyword arguments:
+            path -- Path to file/folder, or none for all shares (default None)
+            reshares -- Return not only the shares from the current user
+                        but all shares from the given file. (Default False)
+            subfiles -- returns all shares within a folder, given that
+                        path defines a folder
+        """
         request = requests.get(
             '%s%s/shares' % (self.url, API_PATH),
             auth=(self.username, self.password),
@@ -108,10 +118,13 @@ class OCShareAPI:
             shares.append(OCShare(self, **share))
         return shares
 
-    def get_share(self, share):
-        return self.get_share_by_id(share.id)
-
     def get_share_by_id(self, share_id):
+        """Gets a share by ID
+
+        Keyword Arguments:
+            share_id -- The ID of the share
+        """
+
         request = requests.get(
             '%s%s/shares/%d' % (self.url, API_PATH, share_id),
             auth=(self.username, self.password),
@@ -122,8 +135,23 @@ class OCShareAPI:
         check_status(jsonfeed)
         return OCShare(self, **jsonfeed['ocs']['data']['element'])
 
-    def create_share(self, path, shareType, shareWith=None,
-                     publicUpload=False, password=None, permissions=None):
+    def create_share(self, path, share_type, share_with=None,
+                     public_upload=False, password=None, permissions=None):
+        """Create a share
+
+        Keyboard arguments:
+            path -- Path to file/folder (Required)
+            share_type -- One of the following (Required)
+                          SHARETYPE_USER - share with a user
+                          SHARETYPE_GROUP - share with a group
+                          SHARETYPE_PUBLIC - get a public link
+            share_with -- User/Group to share with, if share_type is
+                          SHARETYPE_GROUP or SHARETYPE_USER, this is required
+            public_upload -- Allow public upload to a public shared folder
+                            (True/False)
+            password -- Password to protect public link share with
+            permissions -- Bitwise permissions, use the PERMISSION_* constants
+        """
         request = requests.post(
             '%s%s/shares' % (self.url, API_PATH),
             allow_redirects=False,
@@ -131,9 +159,9 @@ class OCShareAPI:
             params={'format': 'json'},
             data={
                 'path': path,
-                'shareType': shareType,
-                'shareWith': shareWith,
-                'publicUpload': int(publicUpload),
+                'shareType': share_type,
+                'shareWith': share_with,
+                'publicUpload': int(public_upload),
                 'password': password,
                 'permissions': permissions
             }
@@ -144,9 +172,12 @@ class OCShareAPI:
         return self.get_share_by_id(jsonfeed['ocs']['data']['id'])
 
     def delete_share(self, share):
+        """Delete a share"""
         return self.delete_share_by_id(share.id)
 
     def delete_share_by_id(self, share_id):
+        """Delete a share by ID"""
+
         request = requests.delete(
             '%s%s/shares/%d' % (self.url, API_PATH, share_id),
             auth=(self.username, self.password),
@@ -157,21 +188,45 @@ class OCShareAPI:
         check_status(jsonfeed)
 
     def update_share(self, share, permissions=None,
-                     password=None, publicUpload=None, expireDate=None):
+                     password=None, public_upload=None, expire_date=None):
+        """Update a share
+
+        Keyword Arguments:
+            share -- a share object
+            permissions -- Bitwise permissions, use the PERMISSION_* constants
+            password -- Password to protect public link share with, False to
+                        disable password.
+            public_upload -- Allow public upload to a public shared folder
+                            (True/False)
+            expire_date -- Expiry date, a python datetime object.
+        """
+
         return self.update_share_by_id(
             share.id,
             permissions,
             password,
-            publicUpload,
-            expireDate=expireDate
+            public_upload,
+            expireDate=expire_date
         )
 
     def update_share_by_id(self, share_id, permissions=None,
-                           password=None, publicUpload=None, expireDate=None):
-        if expireDate:
-            expireDate = expireDate.strftime('%d-%m-%Y')
-        elif expireDate is False:
-            expireDate = ''
+                           password=None, public_upload=None,
+                           expire_date=None):
+        """Update a share by ID
+
+        Keyword Arguments:
+            share -- a share ID
+            permissions -- Bitwise permissions, use the PERMISSION_* constants
+            password -- Password to protect public link share with, False to
+                        disable password.
+            public_upload -- Allow public upload to a public shared folder
+                            (True/False)
+            expire_date -- Expiry date, a python datetime object.
+        """
+        if expire_date:
+            expire_date = expire_date.strftime('%d-%m-%Y')
+        elif expire_date is False:
+            expire_date = ''
 
         if password is False:
             password = ''
@@ -182,8 +237,8 @@ class OCShareAPI:
             data={
                 'permissions': permissions,
                 'password': password,
-                'publicUpload': publicUpload,
-                'expireDate': expireDate
+                'publicUpload': public_upload,
+                'expireDate': expire_date
             }
         )
         check_request(request)
@@ -205,15 +260,15 @@ class OCShare:
         self.ocshareapi.delete_share_by_id(self.id)
 
     def update(self, permissions=None,
-               password=None, publicUpload=None, expireDate=None):
-        self.permissions = permissions
-        self.publicUpload = publicUpload
+               password=None, public_upload=None, expire_date=None):
+        if permissions is not None:
+            self.permissions = permissions
         return self.ocshareapi.update_share_by_id(
             self.id,
             permissions,
             password,
-            publicUpload,
-            expireDate
+            public_upload,
+            expire_date
         )
 
     def __str__(self):

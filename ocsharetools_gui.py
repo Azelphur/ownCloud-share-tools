@@ -22,8 +22,8 @@ class OCShareTool(QtWidgets.QWidget):
         self.ocs = OCShareAPI(args.url, args.username, args.password)
         self.public_share = None
         self.dialog_open = False
-        self.cloudPath = full_path_to_cloud(args.path)
-        if self.cloudPath is None:
+        self.cloud_path = full_path_to_cloud(args.path)
+        if self.cloud_path is None:
             if args.instant_upload_path:
                 path = args.instant_upload_path
             else:
@@ -45,7 +45,7 @@ class OCShareTool(QtWidgets.QWidget):
             )
 
             if reply == QtWidgets.QMessageBox.Yes:
-                self.cloudPath = full_path_to_cloud(
+                self.cloud_path = full_path_to_cloud(
                     path+os.path.basename(args.path)
                 )
                 shutil.move(args.path, path)
@@ -147,19 +147,25 @@ class OCShareTool(QtWidgets.QWidget):
 
         self.show()
 
+    def clear_layout(self, layout):
+        for i in reversed(range(layout.count())):
+            item = layout.itemAt(i)
+            if isinstance(item, QtWidgets.QWidgetItem):
+                item.widget().close()
+            else:
+                self.clear_layout(item.layout())
+            layout.removeItem(item)
+
     def get_shares(self):
         self.shares = {}
-        if self.cloudPath:
+        if self.cloud_path:
             try:
-                shares = self.ocs.get_shares(path=self.cloudPath)
+                shares = self.ocs.get_shares(path=self.cloud_path)
                 for share in shares:
                     self.shares[share.id] = share
             except OCShareException:
                 pass
-        for i in reversed(range(self.shareListVBox.count())):
-            item = self.shareListVBox.itemAt(i)
-            item.widget().close()
-            self.shareListVBox.removeItem(item)
+        self.clear_layout(self.shareListVBox)
         for share_id, share in self.shares.items():
             if share.share_type == 3:
                 self.shareCB.setChecked(True)
@@ -229,9 +235,9 @@ class OCShareTool(QtWidgets.QWidget):
     def add_share(self, share_type, line_edit):
         try:
             share = self.ocs.create_share(
-                path=self.cloudPath,
-                shareType=share_type,
-                shareWith=line_edit.text()
+                path=self.cloud_path,
+                share_type=share_type,
+                share_with=line_edit.text()
             )
             self.shares[share.id] = share
             self.add_share_widgets(share)
@@ -247,7 +253,7 @@ class OCShareTool(QtWidgets.QWidget):
         line_edit.setText('')
 
     def date_selected(self, date):
-        self.public_share.update(expireDate=date.toPyDate())
+        self.public_share.update(expire_date=date.toPyDate())
 
     def create_delete_button(self, hbox, share):
         return lambda checked: self.delete_clicked(
@@ -259,10 +265,8 @@ class OCShareTool(QtWidgets.QWidget):
     def delete_clicked(self, event, share, layout):
         del self.shares[share.id]
         share.delete()
-        for i in reversed(range(layout.count())):
-            item = layout.itemAt(i)
-            item.widget().close()
-            layout.removeItem(item)
+        self.clear_layout(layout)
+        self.shareListVBox.removeItem(layout)
 
     def setup_share_tickbox(self, checkbox, share, permission):
         if share.permissions & permission:
@@ -324,19 +328,19 @@ class OCShareTool(QtWidgets.QWidget):
             self.calendar.show()
             date = datetime.date.today() + datetime.timedelta(days=1)
             self.public_share.update(
-                expireDate=date
+                expire_date=date
             )
             date = QtCore.QDate(date.year, date.month, date.day)
             self.calendar.setSelectedDate(date)
         elif self.public_share:
-            self.public_share.update(expireDate=False)
+            self.public_share.update(expire_date=False)
             self.calendar.hide()
 
     def share_link(self, state):
         if state == QtCore.Qt.Checked:
             share = self.ocs.create_share(
-                path=self.cloudPath,
-                shareType=SHARETYPE_PUBLIC
+                path=self.cloud_path,
+                share_type=SHARETYPE_PUBLIC
             )
             self.shares[share.id] = share
             self.public_share = share
@@ -356,6 +360,7 @@ class OCShareTool(QtWidgets.QWidget):
         if (now is None and
                 QtWidgets.QApplication.activeWindow() is None and
                 self.dialog_open is False):
+            return
             self.close()
 
 

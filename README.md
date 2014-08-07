@@ -86,7 +86,8 @@ print(share.url)
 # Set the expiry date to tomorrow.
 import datetime
 date = datetime.date.today() + datetime.timedelta(days=1)
-share.update(expireDate=date)
+
+share.update(expire_date=date)
 
 # Delete the share
 share.delete()

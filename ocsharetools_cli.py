@@ -245,9 +245,9 @@ def run():
         elif args.subparser_name == "create":
             share = ocs.create_share(
                 path=args.path,
-                shareType=args.share_type,
-                shareWith=args.share_with,
-                publicUpload=args.public_upload,
+                share_type=args.share_type,
+                share_with=args.share_with,
+                public_upload=args.public_upload,
                 password=args.share_password,
                 permissions=calcPermissions(
                     args.permissions_allow,
@@ -280,8 +280,8 @@ def run():
                 share_id=args.id,
                 permissions=permissions,
                 password=args.share_password,
-                publicUpload=args.public_upload,
-                expireDate=expire_date
+                public_pload=args.public_upload,
+                expire_date=expire_date
             )
     except OCShareException as e:
         print(e)
