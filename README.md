@@ -12,7 +12,7 @@ ownCloud-share-tools running on Linux as a Thunar custom action.
 The GUI is designed to be used as a file browser action.
 To add the GUI to Thunar, open Thunar and click edit, configure custom actions, click add then in the command box enter
 
-`python3 ocssharetools.py gui --user YourUserName --pass YourPassword --url http://example.com/owncloud gui --path %F`
+`./ocsharetools.py --user YourUserName --pass YourPassword --url http://example.com/owncloud gui --path %F`
 
 All the other text boxes can be set to whatever you want, although setting the name to ownCloud and using the ownCloud icon is recommended.
 
