@@ -4,6 +4,21 @@ ownCloud share tools is an set of tools that provide access to the ownCloud OCS 
 
 ***
 
+## Requirements
+Python 3
+PyQt5
+requests
+
+To install these on a debian based system, sudo apt-get install python3 python3-pyqt5 python-requests
+
+***
+
+## Install
+
+Run python3 setup.py install
+
+***
+
 ## The GUI
 
 ![](http://i.imgur.com/VQ5vG24.png)
@@ -12,7 +27,7 @@ ownCloud-share-tools running on Linux as a Thunar custom action.
 The GUI is designed to be used as a file browser action.
 To add the GUI to Thunar, open Thunar and click edit, configure custom actions, click add then in the command box enter
 
-`./ocsharetools.py --user YourUserName --pass YourPassword --url http://example.com/owncloud gui --path %F`
+`ocsharetools --user YourUserName --pass YourPassword --url http://example.com/owncloud gui --path %F`
 
 All the other text boxes can be set to whatever you want, although setting the name to ownCloud and using the ownCloud icon is recommended.
 
@@ -20,8 +35,8 @@ All the other text boxes can be set to whatever you want, although setting the n
 
 ## Using the CLI
 ```
-$ ./ocsharetools.py --help
-usage: ocsharetools.py [-h] --username USERNAME --password PASSWORD --url URL
+$ ocsharetools --help
+usage: ocsharetools [-h] --username USERNAME --password PASSWORD --url URL
                        {getshares,getshare,create,update,delete,gui} ...
 
 Perform OCS Share API calls
@@ -43,30 +58,32 @@ optional arguments:
   --url URL             Your OwnCloud url, eg https://example.com/owncloud/
   ```
 
+***
+
 ######Examples:
 Get a list of shares
 
-```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud getshares```
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud getshares```
 
 Create a public share link with a password
 
-```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=3 --share=password secret```
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=3 --share=password secret```
 
 Create a share with a user
 
-```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=0 --share-with=Steve```
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=0 --share-with=Steve```
 
 Create a share with a group
 
-```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=1 --share-with=Developers```
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=1 --share-with=Developers```
 
 Delete a share (ID number is obtained from getshares command)
 
-```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud delete 32```
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud delete 32```
 
 Update a share a share (ID number is obtained from getshares command), setting an expiry date
 
-```./ocssharetools.py --user Bob --pass secret --url http://example.com/ownCloud update 32 --expire-date "31-01-2015"```
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud update 32 --expire-date "31-01-2015"```
 
 ## Using the library
 
