@@ -67,7 +67,7 @@ Get a list of shares
 
 Create a public share link with a password
 
-```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=3 --share=password secret```
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud create --path /NewDocument.odt --share-type=3 --share-password secret```
 
 Create a share with a user
 
