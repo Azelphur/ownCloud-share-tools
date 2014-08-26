@@ -280,7 +280,7 @@ def run():
                 share_id=args.id,
                 permissions=permissions,
                 password=args.share_password,
-                public_pload=args.public_upload,
+                public_upload=args.public_upload,
                 expire_date=expire_date
             )
     except OCShareException as e:
