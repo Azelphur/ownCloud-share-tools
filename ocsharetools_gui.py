@@ -19,7 +19,7 @@ class OCShareTool(QtWidgets.QWidget):
             )
             sys.exit(0)
 
-        self.ocs = OCShareAPI(args.url, args.username, args.password)
+        self.ocs = OCShareAPI(args.url, args.username, args.password, args.disable_ssl_verification)
         self.public_share = None
         self.dialog_open = False
         self.cloud_path = full_path_to_cloud(args.path)
