@@ -29,6 +29,10 @@ To add the GUI to Thunar, open Thunar and click edit, configure custom actions, 
 
 `ocsharetools --user YourUserName --pass YourPassword --url http://example.com/owncloud gui --path %F`
 
+If you are connecting to an OwnCloud server that uses self-signed certificates enter
+
+`ocsharetools --user YourUserName --pass YourPassword --url http://example.com/owncloud gui  --disable-ssl-verification --path %F`
+
 All the other text boxes can be set to whatever you want, although setting the name to ownCloud and using the ownCloud icon is recommended.
 
 ***
@@ -36,7 +40,8 @@ All the other text boxes can be set to whatever you want, although setting the n
 ## Using the CLI
 ```
 $ ocsharetools --help
-usage: ocsharetools [-h] --username USERNAME --password PASSWORD --url URL
+usage: ocsharetools.py [-h] --username USERNAME --password PASSWORD --url URL
+                       [--disable-ssl-verification]
                        {getshares,getshare,create,update,delete,gui} ...
 
 Perform OCS Share API calls
@@ -56,6 +61,10 @@ optional arguments:
   --username USERNAME   Your OwnCloud username
   --password PASSWORD   Your OwnCloud password
   --url URL             Your OwnCloud url, eg https://example.com/owncloud/
+  --disable-ssl-verification
+                        Disables SSL verification, eg when the OwnCloud server
+                        is using self-signed certificates
+
   ```
 
 ***
@@ -85,6 +94,11 @@ Update a share a share (ID number is obtained from getshares command), setting a
 
 ```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud update 32 --expire-date "31-01-2015"```
 
+Get a list of shares on a server that uses self-signed certificats for SSL encryption
+
+```ocsharetools --user Bob --pass secret --url http://example.com/ownCloud --disable-ssl-verification getshares```
+
+
 ## Using the library
 
 ```python
@@ -108,3 +122,15 @@ share.update(expire_date=date)
 
 # Delete the share
 share.delete()
+```
+
+## Troubleshooting
+
+If the connection to the OwnCloud server refuses to work with the error message similar to
+
+```requests.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:598)```
+
+then the server is most likely using a self-signed certificate, which cannot be verified. In this case use the
+**--disable-ssl-verification** command line option, eg for listing the shares on the server use
+
+```ocsharetools.py --username USERNAME --password PASSWORD --url URL --disable-ssl-verification getshares```

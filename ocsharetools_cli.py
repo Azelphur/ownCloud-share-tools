@@ -108,6 +108,12 @@ def run():
                         required=True,
                         help='Your OwnCloud url, eg '
                              'https://example.com/owncloud/')
+    parser.add_argument('--disable-ssl-verification',
+                        action='store_true',
+                        required=False,
+                        help='Disables SSL verification, eg '
+                        'when the OwnCloud server is using '
+                        'self-signed certificates')
 
     subparsers = parser.add_subparsers(
         help='Available commands',
@@ -226,7 +232,7 @@ def run():
     )
 
     args = parser.parse_args()
-    ocs = OCShareAPI(args.url, args.username, args.password)
+    ocs = OCShareAPI(args.url, args.username, args.password, args.disable_ssl_verification)
     if args.subparser_name == "gui":
         import ocsharetools_gui
         ocsharetools_gui.run(args)

@@ -85,10 +85,11 @@ class OCShareException(Exception):
 
 
 class OCShareAPI:
-    def __init__(self, url, username, password):
+    def __init__(self, url, username, password, disable_ssl_verification=False):
         self.username = username
         self.password = password
         self.url = url
+        self.disable_ssl_verification = disable_ssl_verification
 
     def get_shares(self, path=None, reshares=None, subfiles=None):
         """Get a list of shares
@@ -108,7 +109,8 @@ class OCShareAPI:
                 'path': path,
                 'reshares': reshares,
                 'subfiles': subfiles
-            }
+            },
+            verify=not self.disable_ssl_verification
         )
         check_request(request)
         jsonfeed = request.json()
@@ -128,8 +130,10 @@ class OCShareAPI:
         request = requests.get(
             '%s%s/shares/%d' % (self.url, API_PATH, share_id),
             auth=(self.username, self.password),
-            params={'format': 'json'}
+            params={'format': 'json'},
+            verify=not self.disable_ssl_verification
         )
+        print('get_share_by_id: ', self.disable_ssl_verification)
         check_request(request)
         jsonfeed = request.json()
         check_status(jsonfeed)
@@ -164,7 +168,8 @@ class OCShareAPI:
                 'publicUpload': int(public_upload),
                 'password': password,
                 'permissions': permissions
-            }
+            },
+            verify=not self.disable_ssl_verification
         )
         check_request(request)
         jsonfeed = request.json()
@@ -181,7 +186,8 @@ class OCShareAPI:
         request = requests.delete(
             '%s%s/shares/%d' % (self.url, API_PATH, share_id),
             auth=(self.username, self.password),
-            params={'format': 'json'}
+            params={'format': 'json'},
+            verify=not self.disable_ssl_verification
         )
         check_request(request)
         jsonfeed = request.json()
@@ -239,7 +245,8 @@ class OCShareAPI:
                 'password': password,
                 'publicUpload': public_upload,
                 'expireDate': expire_date
-            }
+            },
+            verify=not self.disable_ssl_verification
         )
         check_request(request)
         jsonfeed = request.json()
