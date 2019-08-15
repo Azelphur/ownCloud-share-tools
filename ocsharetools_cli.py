@@ -1,5 +1,6 @@
 from ocsharetools import *
 import argparse
+import path
 from datetime import datetime
 
 
@@ -129,6 +130,11 @@ def run():
         help='path to file/folder'
     )
     parser_get_shares.add_argument(
+        '--ocroot',
+        type=str,
+        help='root to owncloud (to be removed from full path)'
+    )
+    parser_get_shares.add_argument(
         '--enable-reshares',
         action='store_const',
         const=True,
@@ -157,6 +163,11 @@ def run():
         type=str,
         required=True,
         help='path to the file/folder which should be shared'
+    )
+    parser_create.add_argument(
+        '--ocroot',
+        type=str,
+        help='root to owncloud (to be removed from full path)'
     )
     parser_create.add_argument(
         '--share-type',
@@ -237,9 +248,13 @@ def run():
         import ocsharetools_gui
         ocsharetools_gui.run(args)
     try:
+        if len(args.ocroot)>0:
+            ocpath=os.path.realpath(args.path).replace(args.ocroot,'')
+        else:
+            ocpath=args.path
         if args.subparser_name == "getshares":
             shares = ocs.get_shares(
-                path=args.path,
+                path=ocpath,
                 reshares=args.enable_reshares,
                 subfiles=args.enable_subfiles
             )
@@ -250,7 +265,7 @@ def run():
             print("#%d %s %s" % (share.id, share.url, share.path))
         elif args.subparser_name == "create":
             share = ocs.create_share(
-                path=args.path,
+                path=ocpath,
                 share_type=args.share_type,
                 share_with=args.share_with,
                 public_upload=args.public_upload,
