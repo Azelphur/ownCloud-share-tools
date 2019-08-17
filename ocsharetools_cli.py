@@ -248,12 +248,13 @@ def run():
         import ocsharetools_gui
         ocsharetools_gui.run(args)
     try:
-        if len(args.ocroot)>0:
-            ocpath=os.path.realpath(args.path)
-            if ocpath.find(args.ocroot)==0:
-                ocpath=ocpath[len(args.ocroot):]
-        else:
-            ocpath=args.path
+        if hasattr(args,"ocroot"):
+            if (args.ocroot is not None) and (len(args.ocroot)>0):
+                ocpath=os.path.realpath(args.path)
+                if ocpath.find(args.ocroot)==0:
+                    ocpath=ocpath[len(args.ocroot):]
+            else:
+                ocpath=args.path
         if args.subparser_name == "getshares":
             shares = ocs.get_shares(
                 path=ocpath,
