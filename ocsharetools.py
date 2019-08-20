@@ -137,7 +137,7 @@ class OCShareAPI:
         check_request(request)
         jsonfeed = request.json()
         check_status(jsonfeed)
-        return OCShare(self, **jsonfeed['ocs']['data']['element'])
+        return OCShare(self, **jsonfeed['ocs']['data'][0])
 
     def create_share(self, path, share_type, share_with=None,
                      public_upload=False, password=None, permissions=None):
